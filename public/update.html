@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Update Profile</title>
+</head>
+<body>
+  <h2>Update Profile</h2>
+
+  <form id="updateForm">
+    <label for="name">Name:</label><br/>
+    <input type="text" id="name" name="name" required /><br/><br/>
+
+    <label for="email">Email (cannot change):</label><br/>
+    <input type="email" id="email" name="email" disabled /><br/><br/>
+
+    <label for="password">New Password:</label><br/>
+    <input type="password" id="password" name="password" /><br/><br/>
+
+    <button type="submit">Update</button>
+    <button type="button" id="cancelBtn">Cancel</button>
+  </form>
+
+  <script>
+    // ✅ Pre-fill form with current user info
+    fetch("/api/me")
+      .then(res => {
+        if (!res.ok) {
+          window.location.href = "/login.html";
+          return;
+        }
+        return res.json();
+      })
+      .then(user => {
+        document.getElementById("name").value = user.name;
+        document.getElementById("email").value = user.email;
+      });
+
+    // ✅ Form submit handler
+    document.getElementById("updateForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const name = document.getElementById("name").value;
+      const password = document.getElementById("password").value;
+
+      const body = { name };
+      if (password) body.password = password;
+
+      const res = await fetch("/update-profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      if (res.ok) {
+        alert("Profile updated!");
+        window.location.href = "/dashboard.html";
+      } else {
+        const { error } = await res.json();
+        alert("Error: " + error);
+      }
+    });
+
+    // ✅ Cancel button
+    document.getElementById("cancelBtn").addEventListener("click", () => {
+      window.location.href = "/dashboard.html";
+    });
+  </script>
+</body>
+</html>

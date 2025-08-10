@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Dashboard</title>
+</head>
+<body>
+  <h1 id="welcome">Loading...</h1>
+
+  <h2>Account</h2>
+  <p><strong>Name:</strong> <span id="name-display">—</span></p>
+  <p><strong>Email:</strong> <span id="email-display">—</span></p>
+
+  <a id="updateBtn">
+    <button onclick="window.location.href='/update.html'">Update Profile</button>
+  </a>
+  <a id="bookBtn" style="margin-left: 10px;">
+    <button onclick="window.location.href='/booking.html'">Book Vehicle</button>
+  </a>
+
+  <form action="/logout" method="POST" style="margin-top: 20px;">
+    <button type="submit">Logout</button>
+  </form>
+
+  <div id="error" style="color: red; margin-top: 10px;"></div>
+
+  <script>
+    async function loadUser() {
+      try {
+        const res = await fetch("/api/me");
+        if (!res.ok) {
+          // If unauthorized or any failure, send to login
+          window.location.href = "/login.html";
+          return;
+        }
+        const user = await res.json();
+        document.getElementById("welcome").textContent = `Welcome, ${user.name}!`;
+        document.getElementById("name-display").textContent = user.name;
+        document.getElementById("email-display").textContent = user.email;
+      } catch (e) {
+        // Network or unexpected error
+        document.getElementById("error").textContent = "Failed to load profile. Try refreshing.";
+        console.error("Failed to fetch /api/me:", e);
+      }
+    }
+    async function loadOrders() {
+    const res = await fetch('/api/orders');
+    const orders = await res.json();
+    const list = document.getElementById('ordersList');
+    list.innerHTML = orders.map(o =>
+      `<li>${o.vehicle_type} from ${o.from_district} to ${o.to_district} on ${new Date(o.created_at).toLocaleString()}</li>`
+    ).join('');
+  }
+
+  
+  loadOrders();
+
+//     document.getElementById("updateBtn").addEventListener("click", () => {
+//     window.location.href = "/update.html";
+//   });
+    loadUser();
+  </script>
+<ul id="ordersList"></ul>
+</body>
+</html>
+

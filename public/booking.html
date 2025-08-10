@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Book a Vehicle</title>
+</head>
+<body>
+  <h2>Book / Rent a Vehicle</h2>
+  <form id="bookingForm">
+    <label>Vehicle Type:</label><br/>
+    <select id="vehicleType" name="vehicleType" required>
+      <option value="truck">Truck</option>
+      <option value="mini-truck">Mini-Truck</option>
+      <option value="van">Van</option>
+    </select><br/><br/>
+
+    <fieldset>
+      <legend>From:</legend>
+      <label>Division:</label><br/>
+      <select id="fromDivision" name="fromDivision" required>
+        <!-- populated dynamically with divisions -->
+      </select><br/><br/>
+      <label>Address:</label><br/>
+      <input type="text" id="fromAddress" name="fromAddress" required /><br/>
+    </fieldset>
+    <br/>
+
+    <fieldset>
+      <legend>To:</legend>
+      <label>Division:</label><br/>
+      <select id="toDivision" name="toDivision" required>
+        <!-- populated dynamically with divisions -->
+      </select><br/><br/>
+      <label>Address:</label><br/>
+      <input type="text" id="toAddress" name="toAddress" required /><br/>
+    </fieldset>
+    <br/>
+
+    <!-- Dynamic cost display -->
+    <p><strong>Cost: <span id="costDisplay">0</span> units</strong></p>
+
+    <button type="submit">Submit Booking</button>
+    <button type="button" onclick="window.location.href='/dashboard.html'">Cancel</button>
+  </form>
+
+  <script>
+
+    const costMatrix = {
+  Dhaka:      { Dhaka: 1, Chattogram: 5, Khulna: 4, Rajshahi: 4, Rangpur: 5, Mymensingh: 3, Sylhet: 4, Barishal: 4 },
+  Chattogram: { Dhaka: 5, Chattogram: 1, Khulna: 5, Rajshahi: 5, Rangpur: 5, Mymensingh: 5, Sylhet: 5, Barishal: 3 },
+  Khulna:     { Dhaka: 4, Chattogram: 5, Khulna: 1, Rajshahi: 3, Rangpur: 5, Mymensingh: 5, Sylhet: 5, Barishal: 3 },
+  Rajshahi:   { Dhaka: 4, Chattogram: 5, Khulna: 3, Rajshahi: 1, Rangpur: 3, Mymensingh: 5, Sylhet: 5, Barishal: 5 },
+  Rangpur:    { Dhaka: 5, Chattogram: 5, Khulna: 5, Rajshahi: 3, Rangpur: 1, Mymensingh: 5, Sylhet: 5, Barishal: 5 },
+  Mymensingh: { Dhaka: 3, Chattogram: 5, Khulna: 5, Rajshahi: 5, Rangpur: 5, Mymensingh: 1, Sylhet: 3, Barishal: 5 },
+  Sylhet:     { Dhaka: 4, Chattogram: 5, Khulna: 5, Rajshahi: 5, Rangpur: 5, Mymensingh: 3, Sylhet: 1, Barishal: 5 },
+  Barishal:   { Dhaka: 4, Chattogram: 3, Khulna: 3, Rajshahi: 5, Rangpur: 5, Mymensingh: 5, Sylhet: 5, Barishal: 1 }
+};
+    // Fetch list of the 8 divisions on load
+    async function loadDivisions() {
+      const divisions = await fetch('/api/divisions').then(r => r.json());
+      const from = document.getElementById('fromDivision');
+      const to = document.getElementById('toDivision');
+      divisions.forEach(d => {
+        from.add(new Option(d, d));
+        to.add(new Option(d, d));
+      });
+
+      // Set initial cost based on default selections
+      updateCost();
+    }
+
+    // Function to calculate the cost dynamically
+    function updateCost() {
+      const fromDivision = document.getElementById('fromDivision').value;
+      const toDivision = document.getElementById('toDivision').value;
+
+      // Calculate cost
+      let cost;
+      if (fromDivision === toDivision) {
+        cost = 1;  // Same division, default cost 1
+      } else {
+        cost = costMatrix[fromDivision]?.[toDivision] || 1;  // Get from costMatrix or default to 1
+      }
+
+      // Display the cost
+      document.getElementById('costDisplay').textContent = cost;
+    }
+
+    // Recalculate cost when selections change
+    document.getElementById('fromDivision').addEventListener('change', updateCost);
+    document.getElementById('toDivision').addEventListener('change', updateCost);
+
+    loadDivisions();
+
+    // Form submission logic
+    document.getElementById('bookingForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const payload = {
+        vehicleType: document.getElementById('vehicleType').value,
+        fromDivision: document.getElementById('fromDivision').value,
+        fromAddress: document.getElementById('fromAddress').value,
+        toDivision: document.getElementById('toDivision').value,
+        toAddress: document.getElementById('toAddress').value,
+        cost: document.getElementById('costDisplay').textContent // Send the cost to the backend
+      };
+      const res = await fetch('/book', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        alert('Your booking has been submitted!');
+        window.location.href = '/dashboard.html';
+      } else {
+        const { error } = await res.json();
+        alert('Error: ' + (error || 'Could not submit booking.'));
+      }
+    });
+  </script>
+</body>
+</html>
